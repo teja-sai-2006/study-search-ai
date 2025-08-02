@@ -1,0 +1,170 @@
+🔧 You are building the frontend and logic handler for an educational AI platform called **StudyMate**. Your job is to implement the Streamlit-based frontend, based entirely on the following specifications:
+
+### 📁 FILE STRUCTURE (do not change)
+- All UI functions like `render_chat_mode()` must be preserved as-is.
+- Core folders:
+  /ui/components
+  /core
+  /models
+  /utils
+  /assets
+
+---
+
+## ✅ APP OVERVIEW
+
+StudyMate is a **modular AI study assistant** that supports:
+
+- Chat with documents or the web
+- Summarization
+- Topic-based search
+- Table extraction
+- Flashcards
+- Study planner & progress tracker
+- Multimodal input (PDF, image, folder, text)
+
+Every major feature must:
+
+- Support **multi-file** and **folder uploads**
+- Fallback to OCR (`pdf2image + pytesseract`) if standard PDF parsing fails
+- Use **vector DB** via FAISS or Chroma for semantic understanding
+- Use selected AI model for all processing
+
+---
+
+## 🎛️ MODES & FUNCTION REQUIREMENTS
+
+### 💬 `render_chat_mode()`
+- Document Q&A by default (with vector search)
+- Fallback to `duckduckgo`, `wikipedia`, or `arxiv` for out-of-scope queries
+- Web content injected into LLM prompt
+- Uses `streamlit-chat` for streaming responses
+- User selects AI model from dropdown
+- On API error (missing key, quota fail), fallback to **offline model**
+
+---
+
+### 📝 `render_summarize()`
+- Multi-select files
+- Ask user:
+  - Difficulty: Beginner / Intermediate / Advanced
+  - Style: Paragraph, Bullet Points, Table (multi-select)
+  - Include images: Yes/No
+- Multiple summary types allowed
+- Summarization powered by selected LLM
+
+---
+
+### 🛠 `render_customize()`
+- Select any uploaded file or paste text
+- Options:
+  - Tone: Simple / Formal / Clear
+  - Depth: Brief / In-depth
+  - Output: Markdown (error-free)
+- Render the result in a preview box
+
+---
+
+### 🎯 `render_topic_search()`
+- User enters comma-separated topics (max 20)
+- Each searched independently:
+  - Local DB
+  - DuckDuckGo
+  - Wikipedia
+  - Arxiv
+- User selects summary type:
+  - Basic / Intermediate / Advanced / Full Web Dump
+- Allow export to Summary or Flashcards
+
+---
+
+### 🖼 `render_image()`
+- Upload new image or pick one from uploaded PDFs
+- AI must:
+  - Extract OCR text
+  - Provide a description/caption
+- Use BLIP or any HuggingFace image captioning model
+
+---
+
+### 📊 `render_advanced_tables()`
+- Parse tables using:
+  - `camelot`, `pdfplumber`, `tabula`
+- Show selector for PDF pages
+- Output: Summary + Export (CSV, Excel, JSON)
+
+---
+
+### 🌐 `render_web_search()`
+- Input: comma-separated topics
+- Fetch clean results from:
+  - DuckDuckGo
+  - Wikipedia
+  - Arxiv
+- Output style: Basic / Intermediate / Advanced / Raw
+- Export as summary or flashcards
+
+---
+
+### 📚 `render_study_planner()`
+- Inputs:
+  - Topics
+  - Duration (1–6 weeks)
+  - Daily hours
+  - Break interval
+- Output:
+  - Daily schedule with summaries, breaks, food tips
+  - Saved to session
+
+---
+
+### 📈 `render_study_progress()`
+- Track % complete on:
+  - Flashcards
+  - Summaries
+  - Study plan goals
+- Show milestone checklist
+
+---
+
+### 🧠 `render_flashcards()`
+- User selects topics + files
+- Options:
+  - Max cards (up to 100)
+  - Type (multi-select): Q&A, True/False, Fill-in, Formula, Definition, Application
+  - Difficulty: Easy / Medium / Hard
+- Vector search + web fallback
+- Save cards to session, bookmarks, or export
+
+---
+
+### ⚙ Global Behavior
+
+- Every feature must be guided with tooltips or brief instructions
+- Sidebar menu must not be changed
+- Use Streamlit widgets: `st.selectbox`, `st.multiselect`, `st.radio`, `st.expander`, etc.
+- Fallback to offline models:
+  - Summarize → `flan-t5` or `mistral`
+  - Chat/Q&A → `granite`, `mistral`
+  - Flashcards → `mistral`, `bge`
+  - Tables → handled by table libraries
+- If model fails (API error), switch to another online or offline model automatically
+- Show toast if small model is under-capacity
+
+---
+
+## ✅ DEPENDENCIES
+
+You may use:
+- `streamlit`, `streamlit-chat`, `streamlit-tags`, `streamlit-option-menu`
+- `pdfplumber`, `pytesseract`, `pdf2image`
+- `faiss`, `chromadb`
+- `transformers`, `sentence-transformers`, `torch`
+- `duckduckgo_search`, `wikipedia`, `arxiv`
+- `camelot`, `tabula-py`, `openpyxl`
+- `pandas`, `PIL`, `uuid`, `json`, `os`, `shutil`, `base64`, etc.
+
+---
+
+✅ Now generate all necessary Streamlit pages and Python modules based on the above. Keep each mode in a clearly named function (`render_x_mode()`). Use helper files for OCR, vector DB, image parsing, etc.
+
