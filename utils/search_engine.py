@@ -25,22 +25,57 @@ class SearchEngine:
             return []
         
         try:
-            # Add documents to vector database if not already added
-            if self.vector_db:
-                doc_texts = [doc.get('content', '') for doc in documents]
-                doc_metadata = [{'name': doc.get('name', ''), 'type': doc.get('type', '')} for doc in documents]
+            # Try vector search first if available
+            if self.vector_db and hasattr(self.vector_db, 'search'):
+                try:
+                    doc_texts = []
+                    doc_metadata = []
+                    
+                    for doc in documents:
+                        content = doc.get('content', '')
+                        if isinstance(content, str) and content.strip():
+                            doc_texts.append(content)
+                            doc_metadata.append({
+                                'name': doc.get('name', 'Unknown Document'),
+                                'type': doc.get('type', 'document'),
+                                'source_doc': doc
+                            })
+                        elif isinstance(content, dict):
+                            # Handle dict content
+                            text_content = content.get('text', content.get('content', str(content)))
+                            if text_content:
+                                doc_texts.append(str(text_content))
+                                doc_metadata.append({
+                                    'name': doc.get('name', 'Unknown Document'),
+                                    'type': doc.get('type', 'document'),
+                                    'source_doc': doc
+                                })
+                    
+                    if doc_texts:
+                        self.vector_db.add_documents(doc_texts, doc_metadata)
+                        results = self.vector_db.search(query, top_k=top_k)
+                        
+                        # Ensure results have proper format
+                        formatted_results = []
+                        for result in results:
+                            formatted_results.append({
+                                'content': result.get('content', '')[:1000],
+                                'score': result.get('score', 0.5),
+                                'title': result.get('metadata', {}).get('name', 'Document'),
+                                'metadata': result.get('metadata', {})
+                            })
+                        
+                        if formatted_results:
+                            return formatted_results
                 
-                self.vector_db.add_documents(doc_texts, doc_metadata)
-                
-                # Search for similar content
-                results = self.vector_db.search(query, top_k=top_k)
-                return results
-            else:
-                # Fallback to simple text search
-                return self._simple_text_search(query, documents, top_k)
+                except Exception as vector_error:
+                    logger.error(f"Vector search error: {vector_error}")
+            
+            # Always fallback to simple text search
+            return self._simple_text_search(query, documents, top_k)
         
         except Exception as e:
-            logger.error(f"Vector search failed: {e}")
+            logger.error(f"Document search failed: {e}")
             return self._simple_text_search(query, documents, top_k)
     
     def _simple_text_search(self, query: str, documents: List[Dict], top_k: int = 5) -> List[Dict[str, Any]]:
@@ -49,19 +84,38 @@ class SearchEngine:
         query_words = query.lower().split()
         
         for doc in documents:
-            content = doc.get('content', '').lower()
+            content = doc.get('content', '')
+            
+            # Handle different content types
+            if isinstance(content, dict):
+                content_text = str(content.get('text', content.get('content', '')))
+            else:
+                content_text = str(content)
+            
+            if not content_text.strip():
+                continue
+                
+            content_lower = content_text.lower()
             score = 0
             
+            # Score based on word matches
             for word in query_words:
-                score += content.count(word)
+                if len(word) > 2:  # Skip very short words
+                    score += content_lower.count(word)
+            
+            # Bonus for phrase matches
+            if query.lower() in content_lower:
+                score += 10
             
             if score > 0:
                 results.append({
-                    'content': doc.get('content', '')[:500] + "...",
+                    'content': content_text[:1000] + ("..." if len(content_text) > 1000 else ""),
                     'score': score,
+                    'title': doc.get('name', 'Document'),
                     'metadata': {
-                        'name': doc.get('name', ''),
-                        'type': doc.get('type', '')
+                        'name': doc.get('name', 'Unknown Document'),
+                        'type': doc.get('type', 'document'),
+                        'source_doc': doc
                     }
                 })
         

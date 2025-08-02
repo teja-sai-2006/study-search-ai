@@ -1,6 +1,8 @@
 import streamlit as st
 from typing import Dict, Any
 import logging
+import pandas as pd
+from datetime import datetime
 from utils.llm_engine import LLMEngine
 from ui.components.file_uploader import render_document_selector
 from ui.components.export_manager import render_quick_export_buttons
@@ -210,7 +212,7 @@ def render_customize_mode():
                 st.session_state.customized_content = []
             
             entry = {
-                'timestamp': pd.Timestamp.now(),
+                'timestamp': datetime.now(),
                 'source': source_name,
                 'content': customized_content,
                 'options': {

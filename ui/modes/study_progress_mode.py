@@ -324,10 +324,13 @@ def render_study_plan_progress():
 
 def calculate_study_plan_progress() -> float:
     """Calculate overall study plan progress"""
-    if 'study_plan' not in st.session_state:
+    if 'study_plan' not in st.session_state or st.session_state.study_plan is None:
         return 0.0
     
     study_plan = st.session_state.study_plan
+    if study_plan is None:
+        return 0.0
+        
     weekly_plans = study_plan.get('weekly_plans', [])
     
     if not weekly_plans:
