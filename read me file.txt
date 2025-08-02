@@ -1,0 +1,160 @@
+# 📘 StudyMate – AI-Powered Learning Assistant (Hackathon Edition)
+
+> ⚡ An educational AI assistant that reads, understands, and explains your study material using **IBM Watsonx**, **free LLM APIs**, and **offline models** — all in a beautiful web UI.
+
+---
+
+## 🚀 Overview
+
+**StudyMate** is a smart, offline-first AI tool for students and educators. Upload your academic documents — PDFs, DOCX, TXT, Markdown, and more — and instantly:
+
+- 🔍 Ask questions in plain English
+- ✍️ Get detailed answers with sources
+- 🧠 Generate summaries, flashcards, and notes
+- 📚 Cluster topics automatically
+- 💬 Have follow-up conversations
+- 🎓 Build your custom study plan
+
+Built for Hackathons, powered by open AI models — and fully usable **offline** or with **free API keys**.
+
+---
+
+## 🎯 Core Features
+
+### ✅ 1. Functional Features (Hackathon Mandatory)
+
+1. Upload one or more academic PDFs
+2. Chunk content with overlap using PyMuPDF
+3. Embed text with `SentenceTransformers (all-MiniLM-L6-v2)`
+4. Store & retrieve with FAISS (semantic search)
+5. Answer questions using **IBM Watsonx / Mixtral-8x7B-Instruct**
+6. Display source chunks with each response
+7. Streamlit-based UI with upload, chat, and Q&A
+8. Download session log as `.txt`
+
+---
+
+### 💡 2. Extended Document Support
+
+- `.pdf`, `.txt`, `.docx`, `.md`, `.rtf`, `.odt`, etc.
+- Auto-detect file type
+- Optional OCR for scanned documents
+
+---
+
+### 🧠 3. Smart Multi-Mode Interaction
+
+- **Summarize Mode**: Full or section-based summary
+- **Customize Mode**: Short/long, simple/advanced responses
+- **Ask About Images**: Detect & explain visual content
+- **Chat Mode**: Multi-turn conversations with memory
+- **Web Lookup**: Auto-search if content isn’t found
+
+---
+
+### 🔍 4. Topic Intelligence
+
+- Topic clustering by concept (e.g., “Supervised Learning”)
+- Ask by topic → get relevant chunks
+- Clickable references in source
+
+---
+
+### 📤 5. Export & Productivity
+
+- Generate Q&A flashcards
+- Auto notebook generation
+- Export as `.txt`, `.md`, `.pdf`
+- Save and restore full session state
+
+---
+
+### 🎨 6. Advanced UI/UX
+
+- Dark/light mode
+- Sidebar for modes
+- Upload/progress indicators
+- Sticky Ask box
+- Scrollable transcript
+- Image preview & zoom
+- Markdown-formatted answers
+- Visual highlighting in source
+
+---
+
+### 🚀 7. Bonus Hackathon Features
+
+- 🎤 Voice input via microphone
+- 📱 Mobile-friendly design
+- 🧠 Question memory
+- 🔌 Plugin-style layout
+- 🧮 Confidence scores (e.g., “92% match”)
+- 🔧 Prompt tuning (temperature, max length, etc.)
+- 🔁 Alternative answer suggestions
+- 🔐 Secure API config with `.env`
+
+---
+
+### 🧠 8. Advanced Tools (Roadmap Features)
+
+41. 🔄 Real-time FAISS re-indexing
+42. 📸 Snapshot-based Q&A (e.g., highlight + ask)
+43. 🗓️ Study plan generation from doc structure
+44. 📝 APA/IEEE citation generator
+45. 📊 Visual study progress tracker
+
+---
+
+## 🤖 AI Models Used
+
+### 🔷 Online (API-Based)
+
+| Model | Engine | API Source |
+|-------|--------|------------|
+| Mixtral-8x7B- | ✅ Required Core |
+ OpenAI |
+| Gemini Pro
+
+**🔑 Bring-your-own API key** via input box or `/config/` folder.
+**♻️ Fallback engine system** auto-switches if one fails.
+
+---
+
+### 🔶 Offline LLM Models (Downloadable from HuggingFace)
+
+Place these in the `/modules/` folder after downloading:
+
+- `DialoGPT-small`
+- `flan-t5-base`
+- `granite-3.3-2b-instruct`
+- `Mistral7B-Instruct-v0.3`
+- `phi-2-gguf`
+
+> ✅ No GPU required for most small models. Ideal for laptops.
+
+---
+
+## 💻 Running StudyMate (Local)
+
+### 🛠️ Requirements
+
+- Python 3.10+
+- pip, virtualenv recommended
+- `streamlit`, `faiss-cpu`, `sentence-transformers`, `PyMuPDF`, `python-docx`, etc.
+
+### 🏁 Setup Instructions
+
+```bash
+git clone https://github.com/your-org/StudyMate
+cd StudyMate
+pip install -r requirements.txt
+
+
+
+
+
+
+contributed in the develpoment of this AI
+tejasai13052006@gmail.com
+abhinav13197@gmail.com
+maneesh443322@gmail.com
