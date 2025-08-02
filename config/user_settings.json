@@ -1,0 +1,59 @@
+{
+  "ui_preferences": {
+    "theme": "default",
+    "language": "english",
+    "default_summary_style": "Paragraph",
+    "default_difficulty": "Intermediate",
+    "auto_save": true,
+    "enable_notifications": true,
+    "show_tooltips": true,
+    "compact_mode": false
+  },
+  "study_preferences": {
+    "default_flashcard_types": [
+      "Q&A",
+      "Definitions",
+      "Fill-in-the-blank"
+    ],
+    "default_study_duration": 4,
+    "default_daily_hours": 4,
+    "default_break_interval": "30 minutes",
+    "spaced_repetition_enabled": true,
+    "progress_tracking_enabled": true,
+    "goal_reminders_enabled": true
+  },
+  "ai_preferences": {
+    "preferred_llm_module": "auto_smart",
+    "default_model_timeout": 30,
+    "enable_web_search": true,
+    "web_search_sources": [
+      "DuckDuckGo",
+      "Wikipedia"
+    ],
+    "max_context_length": 2000,
+    "enable_model_fallback": true
+  },
+  "export_preferences": {
+    "default_export_format": "PDF",
+    "include_metadata": true,
+    "include_timestamps": true,
+    "auto_export_sessions": false,
+    "export_location": "downloads"
+  },
+  "privacy_settings": {
+    "store_chat_history": true,
+    "store_search_history": true,
+    "anonymous_analytics": false,
+    "data_retention_days": 90
+  },
+  "advanced_settings": {
+    "vector_db_size_mb": 500,
+    "max_chat_history": 200,
+    "ocr_quality": "Balanced",
+    "enable_debug_mode": false,
+    "auto_cleanup_enabled": true,
+    "session_backup_enabled": true
+  },
+  "version": "1.0.0",
+  "last_updated": "2025-08-02T00:55:31.366737"
+}
