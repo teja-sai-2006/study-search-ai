@@ -105,7 +105,20 @@ class LLMEngine:
         model = self.select_best_model(task_type)
         
         if not model:
-            return "❌ No available models found. Please configure API keys or download offline models."
+            # Force use of offline models if available
+            offline_models = self.config.get('llm_config', {}).get('offline_models', {})
+            if offline_models:
+                try:
+                    return self._generate_offline_response(list(offline_models.keys())[0], prompt, context)
+                except Exception as e:
+                    logger.error(f"Offline model fallback failed: {e}")
+            # Use simple fallback engine
+            try:
+                from utils.simple_llm_engine import get_simple_response
+                return get_simple_response(prompt, context, task_type)
+            except Exception as e:
+                logger.error(f"Simple fallback failed: {e}")
+                return "I apologize, but I'm currently unable to process your question due to model availability issues. Please try again or contact support if the problem persists."
         
         try:
             if model in self.config.get('llm_config', {}).get('tier_1_online_models', {}):
@@ -189,7 +202,14 @@ class LLMEngine:
                 return "❌ Gemini API key not configured"
             
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-pro')
+            # Try newer model first, fallback to older version
+            try:
+                model = genai.GenerativeModel('gemini-1.5-flash')
+            except:
+                try:
+                    model = genai.GenerativeModel('gemini-1.0-pro')
+                except:
+                    model = genai.GenerativeModel('gemini-pro')
             
             full_prompt = f"Context: {context}\n\nQuestion: {prompt}" if context else prompt
             response = model.generate_content(full_prompt)

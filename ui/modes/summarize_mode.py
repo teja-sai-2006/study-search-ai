@@ -173,26 +173,22 @@ def generate_summaries(
         
         combined_content = '\n\n'.join(content_blocks)
         
-        # Process each style
+        # Generate summaries for each style
         for style in styles:
             try:
-                summary = generate_single_summary(
+                summary = generate_style_summary(
                     combined_content,
                     style,
                     difficulty,
                     max_length,
                     focus_topics,
                     custom_instructions,
-                    extract_key_terms,
-                    include_citations,
-                    merge_similar_content,
                     llm_engine
                 )
                 summaries[style] = summary
-            
             except Exception as e:
                 logger.error(f"Failed to generate {style} summary: {e}")
-                summaries[style] = f"❌ Failed to generate {style} summary: {str(e)}"
+                summaries[style] = f"Unable to generate {style} summary. Please try again."
         
         return summaries
     
@@ -200,138 +196,71 @@ def generate_summaries(
         logger.error(f"Summary generation failed: {e}")
         return {}
 
-def generate_single_summary(
+def generate_style_summary(
     content: str,
     style: str,
     difficulty: str,
     max_length: int,
     focus_topics: str,
     custom_instructions: str,
-    extract_key_terms: bool,
-    include_citations: bool,
-    merge_similar_content: bool,
-    llm_engine: LLMEngine
+    llm_engine
 ) -> str:
-    """Generate a single summary in specified style"""
+    """Generate summary in specific style"""
     
-    # Build prompt based on style and options
-    prompt = f"""Please create a {style.lower()} summary of the following documents.
-
-Requirements:
-- Difficulty level: {difficulty}
-- Target length: approximately {max_length} words
-- Style: {style}
-"""
-    
-    if focus_topics:
-        prompt += f"- Focus particularly on these topics: {focus_topics}\n"
-    
-    if custom_instructions:
-        prompt += f"- Additional instructions: {custom_instructions}\n"
-    
-    # Style-specific instructions
+    # Prepare prompt based on style
     if style == "Paragraph":
-        prompt += """
-Format as coherent paragraphs with clear topic transitions.
-Start with an overview, then cover main topics in logical order.
-"""
+        prompt = f"""Create a {difficulty.lower()}-level paragraph summary of approximately {max_length} words.
+        
+Content: {content[:2000]}...
+
+{f'Focus on these topics: {focus_topics}' if focus_topics else ''}
+{f'Additional instructions: {custom_instructions}' if custom_instructions else ''}
+
+Generate a clear, coherent paragraph summary."""
+    
     elif style == "Bullet Points":
-        prompt += """
-Format as a hierarchical bullet point structure:
-- Main topics as primary bullets
-  - Supporting details as sub-bullets
-    - Specific examples as tertiary bullets
-"""
+        prompt = f"""Create a {difficulty.lower()}-level bullet point summary.
+        
+Content: {content[:2000]}...
+
+{f'Focus on these topics: {focus_topics}' if focus_topics else ''}
+{f'Additional instructions: {custom_instructions}' if custom_instructions else ''}
+
+Format as clear bullet points covering the main ideas."""
+    
     elif style == "Table":
-        prompt += """
-Format as a structured table with columns like:
-| Topic | Key Points | Details | Source |
-Use markdown table format.
-"""
+        prompt = f"""Create a {difficulty.lower()}-level table summary.
+        
+Content: {content[:2000]}...
+
+{f'Focus on these topics: {focus_topics}' if focus_topics else ''}
+{f'Additional instructions: {custom_instructions}' if custom_instructions else ''}
+
+Format as a table with columns for Topic, Key Points, and Details."""
+    
     elif style == "Mind Map":
-        prompt += """
-Format as a text-based mind map structure:
-CENTRAL TOPIC
-├── Branch 1
-│   ├── Sub-topic 1.1
-│   └── Sub-topic 1.2
-└── Branch 2
-    ├── Sub-topic 2.1
-    └── Sub-topic 2.2
-"""
+        prompt = f"""Create a {difficulty.lower()}-level mind map structure.
+        
+Content: {content[:2000]}...
+
+{f'Focus on these topics: {focus_topics}' if focus_topics else ''}
+{f'Additional instructions: {custom_instructions}' if custom_instructions else ''}
+
+Format as hierarchical mind map with main topics and subtopics."""
+    
     elif style == "Key Points":
-        prompt += """
-Format as numbered key points with brief explanations:
-1. KEY POINT: Brief explanation
-2. KEY POINT: Brief explanation
-"""
+        prompt = f"""Extract {difficulty.lower()}-level key points.
+        
+Content: {content[:2000]}...
+
+{f'Focus on these topics: {focus_topics}' if focus_topics else ''}
+{f'Additional instructions: {custom_instructions}' if custom_instructions else ''}
+
+List the most important key points and insights."""
     
-    # Additional requirements
-    if extract_key_terms:
-        prompt += "- Include a section with key terms and definitions\n"
-    
-    if include_citations:
-        prompt += "- Include references to source documents when making specific claims\n"
-    
-    if merge_similar_content:
-        prompt += "- Merge and consolidate similar information from different sources\n"
-    
-    # Difficulty-specific instructions
-    if difficulty == "Beginner":
-        prompt += """
-- Use simple, clear language
-- Explain technical terms
-- Focus on main concepts rather than details
-"""
-    elif difficulty == "Intermediate":
-        prompt += """
-- Use moderate complexity language
-- Include some technical details
-- Balance concepts with practical applications
-"""
-    elif difficulty == "Advanced":
-        prompt += """
-- Use technical language appropriate for experts
-- Include detailed analysis and nuanced points
-- Focus on implications and advanced concepts
-"""
-    
-    prompt += f"\n\nDocument content:\n{content[:8000]}..."  # Limit content length
+    else:
+        prompt = f"Summarize this content in {style} format: {content[:1000]}..."
     
     # Generate summary
-    response = llm_engine.generate_response(prompt, task_type="summarize")
-    
+    response = llm_engine.generate_response(prompt, content[:1000], "summarize")
     return response
-
-def display_summary_history():
-    """Display previously generated summaries"""
-    if 'summaries' not in st.session_state or not st.session_state.summaries:
-        st.info("No previous summaries found.")
-        return
-    
-    st.markdown("### 📚 Summary History")
-    
-    for i, summary_entry in enumerate(reversed(st.session_state.summaries)):
-        with st.expander(f"Summary {len(st.session_state.summaries) - i} - {summary_entry['timestamp'].strftime('%Y-%m-%d %H:%M')}"):
-            st.markdown(f"**Documents:** {', '.join(summary_entry['documents'])}")
-            st.markdown(f"**Difficulty:** {summary_entry['options']['difficulty']}")
-            st.markdown(f"**Styles:** {', '.join(summary_entry['options']['styles'])}")
-            
-            for style, content in summary_entry['summaries'].items():
-                with st.expander(f"📄 {style}"):
-                    st.markdown(content)
-
-# Add to the main render function
-def render_summarize_mode():
-    """Enhanced render function with history"""
-    # ... existing code ...
-    
-    # Add tab for history
-    tab1, tab2 = st.tabs(["📝 Create Summary", "📚 History"])
-    
-    with tab1:
-        # ... existing summarization code ...
-        pass
-    
-    with tab2:
-        display_summary_history()

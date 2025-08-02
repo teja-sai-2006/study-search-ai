@@ -39,8 +39,18 @@ def render_customize_mode():
             
             for doc in selected_docs:
                 content = doc.get('content', '')
-                if content:
+                if isinstance(content, str) and content:
                     content_parts.append(content)
+                    doc_names.append(doc.get('name', 'Unknown'))
+                elif isinstance(content, dict):
+                    # Handle case where content is a dict - extract text
+                    content_text = str(content.get('text', content.get('content', '')))
+                    if content_text:
+                        content_parts.append(content_text)
+                        doc_names.append(doc.get('name', 'Unknown'))
+                elif content:
+                    # Convert any other type to string
+                    content_parts.append(str(content))
                     doc_names.append(doc.get('name', 'Unknown'))
             
             selected_content = '\n\n'.join(content_parts)
