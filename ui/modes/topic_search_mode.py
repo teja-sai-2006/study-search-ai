@@ -272,109 +272,90 @@ Include technical details, current research, implications, and expert-level insi
         
         if depth_analysis:
             prompt += """
-
-Additionally provide:
-1. Current trends and developments
-2. Challenges and limitations
-3. Future implications
-4. Related fields and connections
-"""
+            
+Additionally, provide deeper analysis including:
+- Historical context and evolution
+- Current trends and developments  
+- Future implications and potential
+- Cross-connections with other fields"""
         
-        summary = llm_engine.generate_response(prompt, task_type="analyze")
-        return summary
+        # Generate summary using LLM
+        response = llm_engine.generate_response(prompt, "", "summarize")
+        return response
     
     except Exception as e:
         logger.error(f"Summary generation failed for {topic}: {e}")
-        return f"Failed to generate summary for '{topic}': {str(e)}"
+        return f"Error generating summary for '{topic}': {str(e)}"
 
 def extract_key_points(topic: str, results: Dict[str, Any]) -> List[str]:
-    """Extract key points from topic results"""
+    """Extract key points from search results"""
+    key_points = []
     
-    try:
-        from utils.llm_engine import LLMEngine
-        llm_engine = LLMEngine()
-        
-        # Combine content
-        all_content = []
-        for result in results.get('local', []) + results.get('web', []):
-            content = result.get('content', '')
-            if content:
-                all_content.append(content)
-        
-        if not all_content:
-            return []
-        
-        combined = '\n'.join(all_content[:3])  # Limit content
-        
-        prompt = f"""Extract 5-7 key points about '{topic}' from this information:
-
-{combined}
-
-Format as a bullet list of the most important facts, concepts, or insights."""
-        
-        response = llm_engine.generate_response(prompt, task_type="analyze")
-        
-        # Parse bullet points
-        lines = response.split('\n')
-        key_points = []
-        for line in lines:
-            line = line.strip()
-            if line.startswith('-') or line.startswith('•') or line.startswith('*'):
-                key_points.append(line[1:].strip())
-            elif line and not line.startswith('#'):
-                key_points.append(line)
-        
-        return key_points[:7]  # Limit to 7 points
+    # Extract from local results
+    for result in results.get('local', []):
+        content = result.get('content', '')
+        if content:
+            # Simple extraction - look for sentences with topic
+            sentences = content.split('.')
+            for sentence in sentences:
+                if topic.lower() in sentence.lower() and len(sentence.strip()) > 20:
+                    key_points.append(sentence.strip())
     
-    except Exception as e:
-        logger.error(f"Key point extraction failed: {e}")
-        return []
+    # Extract from web results
+    for result in results.get('web', []):
+        title = result.get('title', '')
+        content = result.get('content', '')
+        if title and topic.lower() in title.lower():
+            key_points.append(f"• {title}")
+        if content:
+            sentences = content.split('.')
+            for sentence in sentences[:2]:  # Limit to first 2 sentences per source
+                if len(sentence.strip()) > 20:
+                    key_points.append(f"• {sentence.strip()}")
+    
+    return key_points[:10]  # Limit to 10 key points
 
 def find_related_topics(topic: str, results: Dict[str, Any]) -> List[str]:
     """Find topics related to the search topic"""
+    related = set()
     
-    try:
-        from utils.llm_engine import LLMEngine
-        llm_engine = LLMEngine()
-        
-        prompt = f"""Based on the topic '{topic}', suggest 5 related topics that someone studying this subject might want to explore.
-
-Consider:
-- Subtopics and specialized areas
-- Related fields and disciplines
-- Prerequisite knowledge
-- Advanced applications
-
-Format as a simple list of topics."""
-        
-        response = llm_engine.generate_response(prompt, task_type="generate")
-        
-        # Parse topics
-        lines = response.split('\n')
-        related_topics = []
-        for line in lines:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                # Clean up formatting
-                if line.startswith('-') or line.startswith('•') or line.startswith('*'):
-                    line = line[1:].strip()
-                if line:
-                    related_topics.append(line)
-        
-        return related_topics[:5]  # Limit to 5 topics
+    # Simple keyword extraction from results
+    all_content = ""
+    for result in results.get('local', []) + results.get('web', []):
+        content = result.get('content', '')
+        title = result.get('title', '')
+        all_content += f" {content} {title}"
     
-    except Exception as e:
-        logger.error(f"Related topic generation failed: {e}")
-        return []
+    # Basic related topic extraction (simplified)
+    words = all_content.lower().split()
+    topic_words = topic.lower().split()
+    
+    # Look for capitalized words that might be related concepts
+    import re
+    potential_topics = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', all_content)
+    
+    for potential in potential_topics[:20]:  # Limit processing
+        if potential.lower() not in topic.lower() and len(potential) > 3:
+            related.add(potential)
+    
+    return list(related)[:8]  # Limit to 8 related topics
 
-def display_search_results(results: Dict[str, Dict], summary_type: str, export_format: str):
+def display_search_results(
+    all_results: Dict[str, Dict[str, Any]], 
+    summary_type: str, 
+    export_format: str
+):
     """Display comprehensive search results"""
     
-    st.markdown("## 🔍 Search Results")
+    st.markdown("## 📊 Search Results")
     
-    # Results overview
-    total_topics = len(results)
-    topics_with_results = sum(1 for r in results.values() if r.get('local') or r.get('web'))
+    if not all_results:
+        st.error("No results found for your topics.")
+        return
+    
+    # Summary statistics
+    total_topics = len(all_results)
+    topics_with_results = sum(1 for r in all_results.values() if r.get('local') or r.get('web'))
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -382,92 +363,74 @@ def display_search_results(results: Dict[str, Dict], summary_type: str, export_f
     with col2:
         st.metric("Topics with Results", topics_with_results)
     with col3:
-        total_sources = sum(len(r.get('local', [])) + len(r.get('web', [])) for r in results.values())
+        total_sources = sum(len(r.get('local', [])) + len(r.get('web', [])) for r in all_results.values())
         st.metric("Total Sources Found", total_sources)
     
-    # Individual topic results
-    for topic, topic_results in results.items():
-        with st.expander(f"🎯 {topic.title()}", expanded=True):
+    # Display results for each topic
+    for topic, results in all_results.items():
+        with st.expander(f"🎯 {topic}", expanded=True):
             
-            # Summary
-            if topic_results.get('summary'):
-                st.markdown("### 📋 Summary")
-                st.markdown(topic_results['summary'])
+            # Check if we have any results
+            has_local = bool(results.get('local'))
+            has_web = bool(results.get('web'))
             
-            # Key points
-            if topic_results.get('key_points'):
-                st.markdown("### ⭐ Key Points")
-                for point in topic_results['key_points']:
-                    st.markdown(f"• {point}")
+            if not has_local and not has_web:
+                st.warning(f"No results found for '{topic}'")
+                continue
             
-            # Sources
-            col1, col2 = st.columns(2)
+            # Tabs for different views
+            tab1, tab2, tab3, tab4 = st.tabs(["📝 Summary", "📚 Sources", "🔑 Key Points", "🔗 Related"])
             
-            with col1:
-                if topic_results.get('local'):
-                    st.markdown("#### 📄 Local Documents")
-                    for result in topic_results['local']:
-                        source_name = result.get('metadata', {}).get('name', 'Unknown')
-                        score = result.get('score', 0)
-                        st.markdown(f"• **{source_name}** (Score: {score:.2f})")
+            with tab1:
+                summary = results.get('summary', '')
+                if summary:
+                    st.markdown(summary)
+                else:
+                    st.info("No summary available")
             
-            with col2:
-                if topic_results.get('web'):
-                    st.markdown("#### 🌐 Web Sources")
-                    for result in topic_results['web']:
-                        title = result.get('title', 'Unknown')
-                        source = result.get('source', 'web')
-                        url = result.get('url', '')
-                        if url:
-                            st.markdown(f"• **[{title}]({url})** ({source})")
-                        else:
-                            st.markdown(f"• **{title}** ({source})")
+            with tab2:
+                # Local sources
+                if has_local:
+                    st.markdown("### 📁 Local Documents")
+                    for i, result in enumerate(results['local']):
+                        st.markdown(f"**Source {i+1}:** {result.get('metadata', {}).get('name', 'Unknown')}")
+                        st.markdown(f"**Relevance:** {result.get('score', 0):.2f}")
+                        with st.expander("View content"):
+                            st.text(result.get('content', '')[:1000] + "...")
+                
+                # Web sources
+                if has_web:
+                    st.markdown("### 🌐 Web Sources")
+                    for i, result in enumerate(results['web']):
+                        st.markdown(f"**{result.get('title', 'Unknown Title')}**")
+                        st.markdown(f"Source: {result.get('source', 'Unknown')}")
+                        if result.get('url'):
+                            st.markdown(f"🔗 [Link]({result['url']})")
+                        with st.expander("View content"):
+                            st.text(result.get('content', '')[:1000] + "...")
             
-            # Related topics
-            if topic_results.get('related_topics'):
-                st.markdown("#### 🔗 Related Topics")
-                related_tags = " • ".join([f"`{rt}`" for rt in topic_results['related_topics']])
-                st.markdown(related_tags)
+            with tab3:
+                key_points = results.get('key_points', [])
+                if key_points:
+                    for point in key_points:
+                        st.markdown(f"• {point}")
+                else:
+                    st.info("No key points extracted")
+            
+            with tab4:
+                related_topics = results.get('related_topics', [])
+                if related_topics:
+                    st.markdown("**Related topics found:**")
+                    for related in related_topics:
+                        st.markdown(f"• {related}")
+                else:
+                    st.info("No related topics found")
     
     # Export options
     if export_format != "None":
-        st.markdown("### 📤 Export Results")
-        
-        export_data = prepare_export_data(results, export_format)
-        render_quick_export_buttons(export_data, f"topic_search_{export_format.lower()}")
-
-def prepare_export_data(results: Dict[str, Dict], export_format: str) -> Dict[str, Any]:
-    """Prepare search results for export"""
-    
-    if export_format == "Summary":
-        return {
-            'search_summaries': {topic: data.get('summary', '') for topic, data in results.items()},
-            'key_points': {topic: data.get('key_points', []) for topic, data in results.items()},
-            'related_topics': {topic: data.get('related_topics', []) for topic, data in results.items()}
-        }
-    
-    elif export_format == "Flashcards":
-        flashcards = []
-        for topic, data in results.items():
-            # Create topic overview card
-            if data.get('summary'):
-                flashcards.append({
-                    'question': f"What is {topic}?",
-                    'answer': data['summary'][:500] + "..." if len(data['summary']) > 500 else data['summary']
-                })
-            
-            # Create key point cards
-            for point in data.get('key_points', [])[:3]:  # Limit to 3 points per topic
-                flashcards.append({
-                    'question': f"Key point about {topic}:",
-                    'answer': point
-                })
-        
-        return {'flashcards': flashcards}
-    
-    elif export_format == "Both":
-        summary_data = prepare_export_data(results, "Summary")
-        flashcard_data = prepare_export_data(results, "Flashcards")
-        return {**summary_data, **flashcard_data}
-    
-    return results
+        st.markdown("---")
+        try:
+            render_quick_export_buttons(all_results, export_format)
+        except Exception as e:
+            st.error(f"Export functionality not available: {str(e)}")
+            st.info("You can copy and paste the results above for manual export.")
