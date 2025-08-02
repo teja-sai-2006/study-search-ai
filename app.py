@@ -117,10 +117,10 @@ class StudyMateApp:
     
     def __init__(self):
         self.llm_engine = LLMEngine()
-        self.document_processor = DocumentProcessor()
-        self.search_engine = SearchEngine()
-        self.session_manager = SessionManager()
-        self.settings_manager = SettingsManager()
+        self.document_processor = DocumentProcessor() if DocumentProcessor else None
+        self.search_engine = SearchEngine() if SearchEngine else None
+        self.session_manager = SessionManager() if SessionManager else None
+        self.settings_manager = SettingsManager() if SettingsManager else None
         self._initialize_session_state()
         
     def _initialize_session_state(self):
@@ -380,7 +380,15 @@ class StudyMateApp:
                 processed_docs = []
                 for uploaded_file in uploaded_files:
                     try:
-                        doc_content = self.document_processor.process_document(uploaded_file)
+                        if self.document_processor:
+                            doc_content = self.document_processor.process_document(uploaded_file)
+                        else:
+                            # Fallback for text processing
+                            if uploaded_file.type in ['text/plain', 'text/markdown']:
+                                doc_content = str(uploaded_file.read(), "utf-8")
+                            else:
+                                doc_content = f"[File: {uploaded_file.name}] - Document processor not available"
+                        
                         processed_docs.append({
                             'name': uploaded_file.name,
                             'content': doc_content,
@@ -504,25 +512,39 @@ class StudyMateApp:
             session_name = st.text_input("Session name:")
             if st.button("Save Current Session"):
                 if session_name:
-                    self.session_manager.save_session(session_name, st.session_state)
-                    st.success(f"Session '{session_name}' saved!")
+                    if self.session_manager:
+                        try:
+                            # Convert session state to dict for compatibility
+                            session_dict = dict(st.session_state)
+                            self.session_manager.save_session(session_name, session_dict)
+                            st.success(f"Session '{session_name}' saved!")
+                        except Exception as e:
+                            st.error(f"Failed to save session: {str(e)}")
+                    else:
+                        st.error("Session manager not available")
                 else:
                     st.warning("Please enter a session name")
         
         with col2:
             st.markdown("### 📂 Load Session")
-            sessions = self.session_manager.list_sessions()
-            if sessions:
-                selected_session = st.selectbox("Select session to load:", sessions)
-                if st.button("Load Session"):
-                    loaded_state = self.session_manager.load_session(selected_session)
-                    if loaded_state:
-                        for key, value in loaded_state.items():
-                            st.session_state[key] = value
-                        st.success(f"Session '{selected_session}' loaded!")
-                        st.rerun()
+            if self.session_manager:
+                try:
+                    sessions = self.session_manager.list_sessions()
+                    if sessions:
+                        selected_session = st.selectbox("Select session to load:", sessions)
+                        if st.button("Load Session"):
+                            loaded_state = self.session_manager.load_session(selected_session)
+                            if loaded_state:
+                                for key, value in loaded_state.items():
+                                    st.session_state[key] = value
+                                st.success(f"Session '{selected_session}' loaded!")
+                                st.rerun()
+                    else:
+                        st.info("No saved sessions found")
+                except Exception as e:
+                    st.error(f"Failed to load sessions: {str(e)}")
             else:
-                st.info("No saved sessions found")
+                st.error("Session manager not available")
     
     def render_settings(self):
         """Render settings page"""
@@ -541,8 +563,16 @@ class StudyMateApp:
             }
             
             if st.button("💾 Save API Keys"):
-                self.settings_manager.save_api_keys(api_keys)
-                st.success("API keys saved securely!")
+                if self.settings_manager:
+                    try:
+                        self.settings_manager.save_api_keys(api_keys)
+                        st.success("API keys saved securely!")
+                    except AttributeError:
+                        st.error("Settings manager does not support API key saving")
+                    except Exception as e:
+                        st.error(f"Failed to save API keys: {str(e)}")
+                else:
+                    st.error("Settings manager not available")
         
         with tab2:
             st.markdown("### 🎛️ User Preferences")
@@ -555,8 +585,16 @@ class StudyMateApp:
             }
             
             if st.button("💾 Save Preferences"):
-                self.settings_manager.save_preferences(preferences)
-                st.success("Preferences saved!")
+                if self.settings_manager:
+                    try:
+                        self.settings_manager.save_preferences(preferences)
+                        st.success("Preferences saved!")
+                    except AttributeError:
+                        st.error("Settings manager does not support preferences saving")
+                    except Exception as e:
+                        st.error(f"Failed to save preferences: {str(e)}")
+                else:
+                    st.error("Settings manager not available")
         
         with tab3:
             st.markdown("### 🔧 Advanced Settings")
@@ -569,8 +607,16 @@ class StudyMateApp:
             }
             
             if st.button("💾 Save Advanced Settings"):
-                self.settings_manager.save_advanced_settings(advanced_settings)
-                st.success("Advanced settings saved!")
+                if self.settings_manager:
+                    try:
+                        self.settings_manager.save_advanced_settings(advanced_settings)
+                        st.success("Advanced settings saved!")
+                    except AttributeError:
+                        st.error("Settings manager does not support advanced settings saving")
+                    except Exception as e:
+                        st.error(f"Failed to save advanced settings: {str(e)}")
+                else:
+                    st.error("Settings manager not available")
     
     def render_system_status(self):
         """Render system status page"""
@@ -653,25 +699,55 @@ class StudyMateApp:
         elif mode == 'live_updates':
             self.render_live_updates()
         elif mode == 'chat':
-            render_chat_mode()
+            if ui_modes.get('chat_mode'):
+                ui_modes['chat_mode']()
+            else:
+                st.error("Chat mode is not available. Missing dependencies.")
         elif mode == 'summarize':
-            render_summarize_mode()
+            if ui_modes.get('summarize_mode'):
+                ui_modes['summarize_mode']()
+            else:
+                st.error("Summarize mode is not available. Missing dependencies.")
         elif mode == 'customize':
-            render_customize_mode()
+            if ui_modes.get('customize_mode'):
+                ui_modes['customize_mode']()
+            else:
+                st.error("Customize mode is not available. Missing dependencies.")
         elif mode == 'topic_search':
-            render_topic_search_mode()
+            if ui_modes.get('topic_search_mode'):
+                ui_modes['topic_search_mode']()
+            else:
+                st.error("Topic search mode is not available. Missing dependencies.")
         elif mode == 'image':
-            render_image_mode()
+            if ui_modes.get('image_mode'):
+                ui_modes['image_mode']()
+            else:
+                st.error("Image mode is not available. Missing dependencies.")
         elif mode == 'advanced_tables':
-            render_advanced_tables_mode()
+            if ui_modes.get('advanced_tables_mode'):
+                ui_modes['advanced_tables_mode']()
+            else:
+                st.error("Advanced tables mode is not available. Missing dependencies.")
         elif mode == 'web_search':
-            render_web_search_mode()
+            if ui_modes.get('web_search_mode'):
+                ui_modes['web_search_mode']()
+            else:
+                st.error("Web search mode is not available. Missing dependencies.")
         elif mode == 'study_planner':
-            render_study_planner_mode()
+            if ui_modes.get('study_planner_mode'):
+                ui_modes['study_planner_mode']()
+            else:
+                st.error("Study planner mode is not available. Missing dependencies.")
         elif mode == 'flashcards':
-            render_flashcards_mode()
+            if ui_modes.get('flashcards_mode'):
+                ui_modes['flashcards_mode']()
+            else:
+                st.error("Flashcards mode is not available. Missing dependencies.")
         elif mode == 'study_progress':
-            render_study_progress_mode()
+            if ui_modes.get('study_progress_mode'):
+                ui_modes['study_progress_mode']()
+            else:
+                st.error("Study progress mode is not available. Missing dependencies.")
         elif mode == 'export':
             self.render_export()
         elif mode == 'session_manager':
