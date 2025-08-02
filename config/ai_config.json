@@ -1,0 +1,85 @@
+{
+  "llm_config": {
+    "tier_1_online_models": {
+      "openai": {
+        "name": "OpenAI GPT",
+        "api_key_env": "OPENAI_API_KEY",
+        "models": ["gpt-4", "gpt-3.5-turbo"],
+        "capabilities": ["chat", "summarize", "analyze", "generate"]
+      },
+      "gemini": {
+        "name": "Google Gemini",
+        "api_key_env": "GEMINI_API_KEY",
+        "models": ["gemini-pro", "gemini-pro-vision"],
+        "capabilities": ["chat", "summarize", "analyze", "vision"]
+      },
+      "anthropic": {
+        "name": "Anthropic Claude",
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "models": ["claude-3-opus", "claude-3-sonnet"],
+        "capabilities": ["chat", "summarize", "analyze", "generate"]
+      }
+    },
+    "offline_models": {
+      "dialo_gpt_small": {
+        "name": "DialoGPT Small",
+        "model_path": "microsoft/DialoGPT-small",
+        "size_mb": 117,
+        "capabilities": ["chat"],
+        "best_for": "dialogue"
+      },
+      "flan_t5_base": {
+        "name": "FLAN-T5 Base",
+        "model_path": "google/flan-t5-base",
+        "size_mb": 990,
+        "capabilities": ["summarize", "generate"],
+        "best_for": "summarization"
+      },
+      "granite_3_3_2b": {
+        "name": "Granite 3.0 2B",
+        "model_path": "ibm-granite/granite-3.0-2b-instruct",
+        "size_mb": 2400,
+        "capabilities": ["chat", "analyze"],
+        "best_for": "qa"
+      },
+      "mistral_7b_instruct": {
+        "name": "Mistral 7B Instruct",
+        "model_path": "mistralai/Mistral-7B-Instruct-v0.1",
+        "size_mb": 7000,
+        "capabilities": ["chat", "summarize", "analyze"],
+        "best_for": "general"
+      },
+      "phi_2": {
+        "name": "Microsoft Phi-2",
+        "model_path": "microsoft/phi-2",
+        "size_mb": 2700,
+        "capabilities": ["chat", "generate"],
+        "best_for": "reasoning"
+      }
+    }
+  },
+  "ui_config": {
+    "llm_modules": {
+      "auto_smart": {
+        "name": "🤖 Auto-Smart (Recommended)",
+        "description": "Intelligently selects the best available model"
+      },
+      "premium_apis": {
+        "name": "🔥 Premium APIs",
+        "description": "Use online API models (OpenAI, Gemini, Claude)"
+      },
+      "offline_custom": {
+        "name": "💽 Offline Local Models",
+        "description": "Use local offline models"
+      }
+    }
+  },
+  "features": {
+    "fallback_enabled": true,
+    "auto_model_switching": true,
+    "capacity_warnings": true,
+    "web_search_enabled": true,
+    "ocr_fallback": true,
+    "vector_db_enabled": true
+  }
+}
